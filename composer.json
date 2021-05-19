@@ -1,0 +1,54 @@
+{
+    "name": "eypiay/eypiay",
+    "description": "Rapid and simple api with laravel",
+    "keywords": [
+        "eypiay",
+        "eypiay"
+    ],
+    "homepage": "https://github.com/eypiay/eypiay",
+    "license": "MIT",
+    "type": "library",
+    "authors": [
+        {
+            "name": "Jeric Izon",
+            "email": "im.jericizon@gmail.com",
+            "role": "Developer"
+        }
+    ],
+    "require": {
+        "php": "^7.4|^8.0",
+        "illuminate/support": "^8.0"
+    },
+    "require-dev": {
+        "orchestra/testbench": "^6.0",
+        "phpunit/phpunit": "^9.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Eypiay\\Eypiay\\": "src"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Eypiay\\Eypiay\\Tests\\": "tests"
+        }
+    },
+    "scripts": {
+        "test": "vendor/bin/phpunit",
+        "test-coverage": "vendor/bin/phpunit --coverage-html coverage"
+
+    },
+    "config": {
+        "sort-packages": true
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Eypiay\\Eypiay\\EypiayServiceProvider"
+            ],
+            "aliases": {
+                "Eypiay": "Eypiay\\Eypiay\\EypiayFacade"
+            }
+        }
+    }
+}
