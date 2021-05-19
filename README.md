@@ -1,2 +1,2 @@
-# eypiay
-Rapid and simple api generation
+# eypiay (API)
+Rapid and simple api with laravel
