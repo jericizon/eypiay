@@ -88,4 +88,19 @@ class GetMethodTest extends TestCase
         $this->assertArrayHasKey('data', $response['result']);
         $this->assertSame($items, count($response['result']['data']));
     }
+
+    public function test_can_order_items()
+    {
+        $order = 'name';
+        $orderBy = 'asc';
+        $response = $this->json('GET', '/users', [
+            'order' => "{$order}:{$orderBy}",
+        ]);
+
+        $item = \DB::table('users')->orderBy($order, $orderBy)->first();
+        $this->assertTrue($response['success']);
+        $this->assertArrayHasKey('result', $response);
+        $this->assertArrayHasKey('data', $response['result']);
+        $this->assertSame($item->id, $response['result']['data'][0]['id']);
+    }
 }

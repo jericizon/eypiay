@@ -29,9 +29,11 @@ class EypiayController extends EypiayBaseController
             return $this->eypiayReturn();
         }
 
-        $filterColumns = strtolower($request->input('filter', ''));
-
+        $filterColumns = $request->input('filter', '');
         $this->_eypiayFilterColumns(explode(self::PARAM_SPLITTER, $filterColumns));
+
+        $orderColumn = $request->input('order', '');
+        $this->_eypiayOrderColumn($orderColumn);
 
         $items = (int) $request->input('items', config('eypiay.MIN_QUERY'));
 
@@ -53,9 +55,31 @@ class EypiayController extends EypiayBaseController
 
         if (count($filterColumns) > 0) {
             $columns = array_intersect($columns, $filterColumns);
+            $this->response->params['select'] = $columns;
         }
 
         $this->query->select($columns);
+    }
+
+    private function _eypiayOrderColumn(string $orderColumn)
+    {
+
+        if (!$orderColumn) {
+            return;
+        }
+
+        $order = explode(':', $orderColumn);
+        $condition = $order[1] ?? '';
+
+        if (!in_array($condition, ['asc', 'desc'])) {
+            $condition = 'asc';
+        }
+
+        $this->response->params['order'] = [
+            'order' => $order[0],
+            'order_by' => $condition
+        ];
+        $this->query->orderBy($order[0], $condition);
     }
 
     private function _paginate(int $items = 0)
@@ -69,7 +93,7 @@ class EypiayController extends EypiayBaseController
             // reached maximium item query
             $items = config('eypiay.MAX_QUERY');
         }
-
+        $this->response->params['items'] = $items;
         return $this->query->paginate($items);
     }
 }
