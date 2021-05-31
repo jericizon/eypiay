@@ -7,5 +7,5 @@ return [
     'EYPIAY_PATH' => env('EYPIAY_PATH', 'app/Eypiay'),
     'MIN_QUERY' => env('EYPIAY_MIN_QUERY', 10),
     'MAX_QUERY' => env('EYPIAY_MAX_QUERY', 100),
-    'EYPIAY_SHOW_PARAMS' => env('EYPIAY_SHOW_PARAMS', false),
+    'EYPIAY_DEBUG' => env('EYPIAY_DEBUG', env('APP_DEBUG', false)),
 ];

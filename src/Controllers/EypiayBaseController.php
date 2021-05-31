@@ -104,7 +104,7 @@ class EypiayBaseController extends Controller
         $response->success = filter_var($this->success, FILTER_VALIDATE_BOOLEAN);
         $response->status = self::STATUS_TEXT[$this->code] ?? null;
 
-        if (!filter_var(config('eypiay.EYPIAY_SHOW_PARAMS'), FILTER_VALIDATE_BOOLEAN)) {
+        if (!filter_var(config('eypiay.EYPIAY_DEBUG'), FILTER_VALIDATE_BOOLEAN)) {
             unset($response->params);
         }
 

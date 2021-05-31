@@ -121,6 +121,11 @@ class EypiayController extends EypiayBaseController
             return;
         }
 
+        $this->response->params['search'] = [
+            'strict' => $strictSearch,
+            'search' => $searchCollection,
+        ];
+
         $this->query->where(function ($query) use ($searchCollection, $strictSearch) {
             foreach ($searchCollection as $search) {
                 $searchKey = $search['key'];
