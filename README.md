@@ -7,4 +7,5 @@ Rapid and simple api with laravel
 ?items=10
 ?filter=id|username|email
 ?search=maker:mercedes|color:white
+?strict_search=true
 ?order=created_at:asc

@@ -103,4 +103,33 @@ class GetMethodTest extends TestCase
         $this->assertArrayHasKey('data', $response['result']);
         $this->assertSame($item->id, $response['result']['data'][0]['id']);
     }
+
+    public function test_can_search_in_column()
+    {
+        $keys = ['id:20'];
+        $response = $this->json('GET', '/users', [
+            'search' => implode('|', $keys)
+        ]);
+
+        $item = \DB::table('users')->where('id', 'LIKE', '20')->first();
+        $this->assertTrue($response['success']);
+        $this->assertArrayHasKey('result', $response);
+        $this->assertArrayHasKey('data', $response['result']);
+        $this->assertSame($item->id, $response['result']['data'][0]['id']);
+    }
+
+    public function test_can_search_sctrict()
+    {
+        $item = \DB::table('users')->inRandomOrder()->first();
+        $keys = ["email:{$item->email}"];
+        $response = $this->json('GET', '/users', [
+            'search' => implode('|', $keys),
+            'strict_search' => true,
+        ]);
+
+        $this->assertTrue($response['success']);
+        $this->assertArrayHasKey('result', $response);
+        $this->assertArrayHasKey('data', $response['result']);
+        $this->assertSame($item->id, $response['result']['data'][0]['id']);
+    }
 }
