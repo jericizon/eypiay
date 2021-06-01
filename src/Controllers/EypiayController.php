@@ -55,14 +55,14 @@ class EypiayController extends EypiayBaseController
     {
         $filterColumns = array_filter($filterColumns);
 
-        $columns = $this->getVisibleColumns($this->dbTable, $this->dbHidden);
+        $visibleColumns = $this->getVisibleColumns($this->dbTable, $this->dbHidden);
 
         if (count($filterColumns) > 0) {
-            $columns = array_intersect($columns, $filterColumns);
-            $this->response->params['select'] = $columns;
+            $visibleColumns = array_intersect($visibleColumns, $filterColumns);
+            $this->response->params['select'] = $visibleColumns;
         }
 
-        $this->query->select($columns);
+        $this->query->select($visibleColumns);
     }
 
     private function _eypiayOrderColumn(string $orderColumn)
@@ -72,13 +72,13 @@ class EypiayController extends EypiayBaseController
             return;
         }
 
-        $columns = $this->getVisibleColumns($this->dbTable, $this->dbHidden);
+        $visibleColumns = $this->getVisibleColumns($this->dbTable, $this->dbHidden);
 
         $order = explode(':', $orderColumn);
         $orderColumnName = $order[0] ?? 'id';
         $condition = $order[1] ?? '';
 
-        if (!in_array($orderColumnName, $columns)) {
+        if (!in_array($orderColumnName, $visibleColumns)) {
             return;
         }
 
@@ -97,14 +97,14 @@ class EypiayController extends EypiayBaseController
     {
         $searchColumns = array_filter($searchColumns);
 
-        $columns = $this->getVisibleColumns($this->dbTable, $this->dbHidden);
+        $visibleColumns = $this->getVisibleColumns($this->dbTable, $this->dbHidden);
 
-        $searchCollection = collect($searchColumns)->map(function ($search) use ($columns) {
+        $searchCollection = collect($searchColumns)->map(function ($search) use ($visibleColumns) {
             $item = explode(':', $search);
             $key = $item[0];
             $value = $item[1] ?? 'asc';
 
-            if (!in_array($key, $columns)) {
+            if (!in_array($key, $visibleColumns)) {
                 return null;
             }
             return ['key' => $key, 'value' => $value];
@@ -134,21 +134,20 @@ class EypiayController extends EypiayBaseController
                 }
             }
         });
-
-        // $this->query->select($columns);
     }
 
     private function _paginate(int $items = 0)
     {
+        // reached minimum item query;
         if ($items < config('eypiay.MIN_QUERY')) {
-            // reached minimum item query;
             $items = config('eypiay.MIN_QUERY');
         }
 
+        // reached maximium item query
         if ($items > config('eypiay.MAX_QUERY')) {
-            // reached maximium item query
             $items = config('eypiay.MAX_QUERY');
         }
+
         $this->response->params['items'] = $items;
         return $this->query->paginate($items);
     }
@@ -170,9 +169,9 @@ class EypiayController extends EypiayBaseController
             }
         }
 
-        $columns = $this->getFillableColumns($this->dbTable);
+        $fillableColumns = $this->getFillableColumns($this->dbTable);
 
-        $post = $request->only($columns);
+        $post = $request->only($fillableColumns);
 
         if (count($this->requestCasts)) {
             foreach ($this->requestCasts as $castName => $cast) {
@@ -182,17 +181,17 @@ class EypiayController extends EypiayBaseController
             }
         }
 
-        if (in_array('created_at', $columns) && !isset($post['created_at'])) {
+        if (in_array('created_at', $fillableColumns) && !isset($post['created_at'])) {
             $post['created_at'] = Carbon::now();
         }
 
-        if (in_array('updated_at', $columns) && !isset($post['updated_at'])) {
+        if (in_array('updated_at', $fillableColumns) && !isset($post['updated_at'])) {
             $post['updated_at'] = Carbon::now();
         }
 
         DB::beginTransaction();
         try {
-            $createdRecord = DB::table($this->dbTable)->insertGetId($post);
+            $createdRecord = $this->query->insertGetId($post);
 
             if (!$createdRecord) {
                 $this->code = 422;
@@ -201,10 +200,9 @@ class EypiayController extends EypiayBaseController
                 $this->success = true;
                 $this->response->message = 'New record added.';
 
-                $columns = $this->getVisibleColumns($this->dbTable, $this->dbHidden);
+                $visibleColumns = $this->getVisibleColumns($this->dbTable, $this->dbHidden);
 
-                $this->response->result = DB::table($this->dbTable)
-                    ->select($columns)
+                $this->response->result = $this->query->select($visibleColumns)
                     ->where('id', $createdRecord)
                     ->first();
 
@@ -216,6 +214,7 @@ class EypiayController extends EypiayBaseController
             $this->response->message = $error->getMessage();
         }
 
+        $this->response->params['post'] = $post;
         return $this->eypiayReturn();
     }
 }
