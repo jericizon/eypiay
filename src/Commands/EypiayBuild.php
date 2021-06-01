@@ -79,14 +79,21 @@ class EypiayBuild extends Command
 
     private function _initBuildFiles()
     {
+        // routes.php
         $this->_appendRoute('<?php' . PHP_EOL);
         $this->_appendRoute('// Eypiay generated route file');
         $this->_appendRoute('use Illuminate\Support\Facades\Route;');
         $this->_appendRoute('use Eypiay\Eypiay\Controllers\EypiayController;' . PHP_EOL);
 
+        // db.php
         $this->_appendDbConfig('<?php' . PHP_EOL);
         $this->_appendDbConfig('// Eypiay generated config file' . PHP_EOL);
         $this->_appendDbConfig('return [');
+
+        // request.php
+        $this->_appendRequestConfig('<?php' . PHP_EOL);
+        $this->_appendRequestConfig('// Eypiay generated config file' . PHP_EOL);
+        $this->_appendRequestConfig('return [');
     }
 
     private function _postBuildFiles()
@@ -95,6 +102,9 @@ class EypiayBuild extends Command
 
         $this->_appendDbConfig('];');
         $this->_appendDbConfig(PHP_EOL . PHP_EOL . '// Generated: ' . Carbon::now());
+
+        $this->_appendRequestConfig('];');
+        $this->_appendRequestConfig(PHP_EOL . PHP_EOL . '// Generated: ' . Carbon::now());
     }
 
     private function _appendRoute(string $content = '')
@@ -112,6 +122,16 @@ class EypiayBuild extends Command
         File::append("{$this->tmpPath}/db.php", $tabs . $content . PHP_EOL);
     }
 
+    private function _appendRequestConfig(string $content = '', $indent = 0)
+    {
+        $tabs = '';
+        for ($i = 0; $i < $indent; $i++) {
+            $tabs .= "\t";
+        }
+
+        File::append("{$this->tmpPath}/request.php", $tabs . $content . PHP_EOL);
+    }
+
     private function _processFile(array $config)
     {
         if (!isset($config['url'])) {
@@ -127,32 +147,35 @@ class EypiayBuild extends Command
             return;
         }
 
+        $tableName = $config['database']['table'] ?? basename($url);
+
         $this->_appendRoute("// {$url}");
         $this->_appendDbConfig("'{$url}' => [", 1);
+        $this->_appendRequestConfig("'{$url}' => [", 1);
 
-        if (isset($config['database']['table'])) {
-            $tableName = $config['database']['table'];
-        } else {
-            $tableName = basename($url);
-        }
-
+        // db.php
         $this->_appendDbConfig("'table' => '{$tableName}',", 2);
-
-        if (isset($config['database']['hidden'])) {
-            $hidden = json_encode($config['database']['hidden']);
-        } else {
-            $hidden = [];
-        }
-
+        $hidden = json_encode($config['database']['hidden'] ?? []);
         $this->_appendDbConfig("'hidden' => {$hidden},", 2);
-
-        if (isset($config['database']['fillable'])) {
-            $fillable = json_encode($config['database']['fillable']);
-        } else {
-            $fillable = [];
-        }
-
+        $fillable = json_encode($config['database']['fillable'] ?? []);
         $this->_appendDbConfig("'fillable' => {$fillable},", 2);
+
+        // request.php
+        $validationsCollection = collect($config['request']['validations'] ?? [])->map(function ($item, $key) {
+            return "'{$key}' => '{$item}'";
+        })->toArray();
+
+        $validations = json_encode(array_values(array_filter($validationsCollection)) ?? []);
+        $validations = str_replace('"', '', $validations);
+        $this->_appendRequestConfig("'validations' => {$validations},", 2);
+
+        $castsCollection = collect($config['request']['casts'] ?? [])->map(function ($item, $key) {
+            return "'{$key}' => '{$item}'";
+        })->toArray();
+
+        $casts = json_encode(array_values(array_filter($castsCollection)) ?? []);
+        $casts = str_replace('"', '', $casts);
+        $this->_appendRequestConfig("'casts' => {$casts},", 2);
 
         foreach ($config['methods'] as $methodKey => $methodValue) {
 
@@ -179,7 +202,8 @@ class EypiayBuild extends Command
             $this->_appendRoute("Route::{$method}('/{$routeUrl}', {$controller});");
         }
 
-        $this->_appendDbConfig("],", 1);
+        $this->_appendDbConfig("],", 1); // closing db.php
+        $this->_appendRequestConfig("],", 1); // closing request.php
 
         $this->line('');
     }

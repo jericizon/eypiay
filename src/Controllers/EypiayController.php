@@ -4,11 +4,16 @@ namespace Eypiay\Eypiay\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Validator;
 use DB;
-use Eypiay\Eypiay\Eypiay;
+use Carbon\Carbon;
+
+use Eypiay\Eypiay\Traits\HelperTrait as EypiayHelper;
 
 class EypiayController extends EypiayBaseController
 {
+    use EypiayHelper;
+
     const PARAM_SPLITTER = '|';
 
     protected $query;
@@ -46,20 +51,11 @@ class EypiayController extends EypiayBaseController
         return $this->eypiayReturn();
     }
 
-    protected function getVisibleColumns()
-    {
-        $columns = Schema::getColumnListing($this->dbTable);
-        if (count($this->dbHidden)) {
-            $columns = array_diff($columns, $this->dbHidden);
-        }
-        return $columns;
-    }
-
     private function _eypiayFilterColumns(array $filterColumns = [])
     {
         $filterColumns = array_filter($filterColumns);
 
-        $columns = $this->getVisibleColumns();
+        $columns = $this->getVisibleColumns($this->dbTable, $this->dbHidden);
 
         if (count($filterColumns) > 0) {
             $columns = array_intersect($columns, $filterColumns);
@@ -76,7 +72,7 @@ class EypiayController extends EypiayBaseController
             return;
         }
 
-        $columns = $this->getVisibleColumns();
+        $columns = $this->getVisibleColumns($this->dbTable, $this->dbHidden);
 
         $order = explode(':', $orderColumn);
         $orderColumnName = $order[0] ?? 'id';
@@ -101,7 +97,7 @@ class EypiayController extends EypiayBaseController
     {
         $searchColumns = array_filter($searchColumns);
 
-        $columns = $this->getVisibleColumns();
+        $columns = $this->getVisibleColumns($this->dbTable, $this->dbHidden);
 
         $searchCollection = collect($searchColumns)->map(function ($search) use ($columns) {
             $item = explode(':', $search);
@@ -155,5 +151,71 @@ class EypiayController extends EypiayBaseController
         }
         $this->response->params['items'] = $items;
         return $this->query->paginate($items);
+    }
+
+    public function post(Request $request)
+    {
+        $this->_initDbConnection();
+
+        if (!$this->query) {
+            return $this->eypiayReturn();
+        }
+
+        if (count($this->requestValidation)) {
+            $validator = Validator::make($request->all(), $this->requestValidation);
+            if ($validator->fails()) {
+                $this->code = 422;
+                $this->response->errors = $validator->errors();
+                return $this->eypiayReturn();
+            }
+        }
+
+        $columns = $this->getFillableColumns($this->dbTable);
+
+        $post = $request->only($columns);
+
+        if (count($this->requestCasts)) {
+            foreach ($this->requestCasts as $castName => $cast) {
+                if (isset($post[$castName])) {
+                    $post[$castName] = $this->castData($cast, $post[$castName]);
+                }
+            }
+        }
+
+        if (in_array('created_at', $columns) && !isset($post['created_at'])) {
+            $post['created_at'] = Carbon::now();
+        }
+
+        if (in_array('updated_at', $columns) && !isset($post['updated_at'])) {
+            $post['updated_at'] = Carbon::now();
+        }
+
+        DB::beginTransaction();
+        try {
+            $createdRecord = DB::table($this->dbTable)->insertGetId($post);
+
+            if (!$createdRecord) {
+                $this->code = 422;
+                $this->response->message = 'Failed to insert new record.';
+            } else {
+                $this->success = true;
+                $this->response->message = 'New record added.';
+
+                $columns = $this->getVisibleColumns($this->dbTable, $this->dbHidden);
+
+                $this->response->result = DB::table($this->dbTable)
+                    ->select($columns)
+                    ->where('id', $createdRecord)
+                    ->first();
+
+                DB::commit();
+            }
+        } catch (\Exception $error) {
+            DB::rollBack();
+            $this->code = 422;
+            $this->response->message = $error->getMessage();
+        }
+
+        return $this->eypiayReturn();
     }
 }

@@ -28,7 +28,12 @@ class InitialTest extends TestCase
     public function test_build_files()
     {
         \Artisan::call('eypiay:build');
-        // dd(\Artisan::output());
+
+        $output = \Artisan::output();
+        echo PHP_EOL . 'Artisan build oputput:' . PHP_EOL;
+        print_r($output);
+        echo PHP_EOL;
+
         $this->assertTrue(true);
     }
 }

@@ -76,16 +76,30 @@ class EypiayBaseController extends Controller
     protected $dbHidden = []; // hidden table columns for results
     protected $eypiay = []; // eypiay global configuration
 
+    protected $requestValidation = [];
+    protected $requestCasts = [];
+
+
     public function __construct(Request $request)
     {
 
         $this->eypiay['route'] = $request->path();
 
         $dbFile = base_path(config('eypiay.EYPIAY_PATH') . '/build/db.php');
+
+        $route = $this->eypiay['route'];
+
         if (File::exists($dbFile)) {
             $dbConfig = include $dbFile;
-            $this->dbTable = $dbConfig[$this->eypiay['route']]['table'] ?? null;
-            $this->dbHidden = $dbConfig[$this->eypiay['route']]['hidden'] ?? [];
+            $this->dbTable = $dbConfig[$route]['table'] ?? null;
+            $this->dbHidden = $dbConfig[$route]['hidden'] ?? [];
+        }
+
+        $requestFile = base_path(config('eypiay.EYPIAY_PATH') . '/build/request.php');
+        if (File::exists($requestFile)) {
+            $requestConfig = include $requestFile;
+            $this->requestValidation = $requestConfig[$route]['validations'] ?? [];
+            $this->requestCasts = $requestConfig[$route]['casts'] ?? [];
         }
 
         $this->code = 404;
