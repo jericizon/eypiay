@@ -205,13 +205,12 @@ class EypiayController extends EypiayBaseController
                 $this->response->result = $this->query->select($visibleColumns)
                     ->where('id', $createdRecord)
                     ->first();
-
                 DB::commit();
             }
         } catch (\Exception $error) {
-            DB::rollBack();
             $this->code = 422;
             $this->response->message = $error->getMessage();
+            DB::rollBack();
         }
 
         $this->response->params['post'] = $post;
