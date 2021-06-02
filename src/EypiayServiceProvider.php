@@ -19,7 +19,7 @@ class EypiayServiceProvider extends ServiceProvider
         // $this->loadViewsFrom(__DIR__.'/../resources/views', 'eypiay');
         // $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
         // $this->loadRoutesFrom(__DIR__.'/routes.php');
-        $routePath = base_path(config('eypiay.EYPIAY_PATH')) . '/build/routes.php';
+        $routePath = base_path(config('eypiay.path')) . '/build/routes.php';
 
         if (File::exists($routePath)) {
             $this->loadRoutesFrom($routePath);

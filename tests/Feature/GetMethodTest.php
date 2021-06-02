@@ -10,7 +10,6 @@ class GetMethodTest extends TestCase
     public function test_can_get_default_details()
     {
         $response = $this->json('GET', '/users');
-        // $response->dump();
 
         $this->assertTrue($response['success']);
         $this->assertArrayHasKey('result', $response);
@@ -54,29 +53,29 @@ class GetMethodTest extends TestCase
         // $response->dump();
         $this->assertTrue($response['success']);
         $this->assertArrayHasKey('result', $response);
-        $this->assertSame(config('eypiay.MIN_QUERY'), $response['result']['per_page']);
+        $this->assertSame(config('eypiay.min_query'), $response['result']['per_page']);
 
         $this->assertArrayHasKey('data', $response['result']);
-        $this->assertSame(config('eypiay.MIN_QUERY'), count($response['result']['data']));
+        $this->assertSame(config('eypiay.min_query'), count($response['result']['data']));
     }
 
     public function test_can_sort_maximum_item()
     {
         $response = $this->json('GET', '/users', [
-            'items' => config('eypiay.MAX_QUERY') + 10,
+            'items' => config('eypiay.max_query') + 10,
         ]);
 
         $this->assertTrue($response['success']);
         $this->assertArrayHasKey('result', $response);
-        $this->assertSame(config('eypiay.MAX_QUERY'), $response['result']['per_page']);
+        $this->assertSame(config('eypiay.max_query'), $response['result']['per_page']);
 
         $this->assertArrayHasKey('data', $response['result']);
-        $this->assertSame(config('eypiay.MAX_QUERY'), count($response['result']['data']));
+        $this->assertSame(config('eypiay.max_query'), count($response['result']['data']));
     }
 
     public function test_can_sort_items()
     {
-        $items = rand(config('eypiay.MIN_QUERY'), config('eypiay.MAX_QUERY'));
+        $items = rand(config('eypiay.min_query'), config('eypiay.max_query'));
         $response = $this->json('GET', '/users', [
             'items' => $items,
         ]);

@@ -10,41 +10,23 @@ use Carbon\Carbon;
 
 use Eypiay\Eypiay\Traits\HelperTrait as EypiayHelper;
 
-class EypiayController extends EypiayBaseController
+class EypiayGetController extends EypiayBaseController
 {
     use EypiayHelper;
 
-    const PARAM_SPLITTER = '|';
-
-    protected $query;
-
-    private function _initDbConnection()
-    {
-        if (!$this->dbTable || !Schema::hasTable($this->dbTable)) {
-            return;
-        }
-        $this->query = DB::table($this->dbTable);
-    }
-
     public function get(Request $request)
     {
-        $this->_initDbConnection();
-
-        if (!$this->query) {
-            return $this->eypiayReturn();
-        }
-
         $filterColumns = $request->input('filter', '');
-        $this->_eypiayFilterColumns(explode(self::PARAM_SPLITTER, $filterColumns));
+        $this->_eypiayFilterColumns(explode(config('eypiay.param_splitter'), $filterColumns));
 
         $orderColumn = $request->input('order', '');
         $this->_eypiayOrderColumn($orderColumn);
 
         $searchColumns = $request->input('search', '');
         $strictSearch = filter_var($request->input('strict_search', false), FILTER_VALIDATE_BOOLEAN);
-        $this->_eypiaySearchColumns(explode(self::PARAM_SPLITTER, $searchColumns), $strictSearch);
+        $this->_eypiaySearchColumns(explode(config('eypiay.param_splitter'), $searchColumns), $strictSearch);
 
-        $items = (int) $request->input('items', config('eypiay.MIN_QUERY'));
+        $items = (int) $request->input('items', config('eypiay.min_query'));
 
         $this->response->result = $this->_paginate($items);
         $this->success = true;
@@ -139,81 +121,16 @@ class EypiayController extends EypiayBaseController
     private function _paginate(int $items = 0)
     {
         // reached minimum item query;
-        if ($items < config('eypiay.MIN_QUERY')) {
-            $items = config('eypiay.MIN_QUERY');
+        if ($items < config('eypiay.min_query')) {
+            $items = config('eypiay.min_query');
         }
 
         // reached maximium item query
-        if ($items > config('eypiay.MAX_QUERY')) {
-            $items = config('eypiay.MAX_QUERY');
+        if ($items > config('eypiay.max_query')) {
+            $items = config('eypiay.max_query');
         }
 
         $this->response->params['items'] = $items;
         return $this->query->paginate($items);
-    }
-
-    public function post(Request $request)
-    {
-        $this->_initDbConnection();
-
-        if (!$this->query) {
-            return $this->eypiayReturn();
-        }
-
-        if (count($this->requestValidation)) {
-            $validator = Validator::make($request->all(), $this->requestValidation);
-            if ($validator->fails()) {
-                $this->code = 422;
-                $this->response->errors = $validator->errors();
-                return $this->eypiayReturn();
-            }
-        }
-
-        $fillableColumns = $this->getFillableColumns($this->dbTable);
-
-        $post = $request->only($fillableColumns);
-
-        if (count($this->requestCasts)) {
-            foreach ($this->requestCasts as $castName => $cast) {
-                if (isset($post[$castName])) {
-                    $post[$castName] = $this->castData($cast, $post[$castName]);
-                }
-            }
-        }
-
-        if (in_array('created_at', $fillableColumns) && !isset($post['created_at'])) {
-            $post['created_at'] = Carbon::now();
-        }
-
-        if (in_array('updated_at', $fillableColumns) && !isset($post['updated_at'])) {
-            $post['updated_at'] = Carbon::now();
-        }
-
-        DB::beginTransaction();
-        try {
-            $createdRecord = $this->query->insertGetId($post);
-
-            if (!$createdRecord) {
-                $this->code = 422;
-                $this->response->message = 'Failed to insert new record.';
-            } else {
-                $this->success = true;
-                $this->response->message = 'New record added.';
-
-                $visibleColumns = $this->getVisibleColumns($this->dbTable, $this->dbHidden);
-
-                $this->response->result = $this->query->select($visibleColumns)
-                    ->where('id', $createdRecord)
-                    ->first();
-                DB::commit();
-            }
-        } catch (\Exception $error) {
-            $this->code = 422;
-            $this->response->message = $error->getMessage();
-            DB::rollBack();
-        }
-
-        $this->response->params['post'] = $post;
-        return $this->eypiayReturn();
     }
 }

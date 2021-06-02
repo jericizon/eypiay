@@ -5,6 +5,7 @@ namespace Eypiay\Eypiay\Controllers;
 use Illuminate\Support\Facades\File;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Schema;
+use DB;
 
 class EypiayBaseController extends Controller
 {
@@ -79,13 +80,14 @@ class EypiayBaseController extends Controller
     protected $requestValidation = [];
     protected $requestCasts = [];
 
+    protected $query;
 
     public function __construct(Request $request)
     {
 
         $this->eypiay['route'] = $request->path();
 
-        $dbFile = base_path(config('eypiay.EYPIAY_PATH') . '/build/db.php');
+        $dbFile = base_path(config('eypiay.path') . '/build/db.php');
 
         $route = $this->eypiay['route'];
 
@@ -95,13 +97,19 @@ class EypiayBaseController extends Controller
             $this->dbHidden = $dbConfig[$route]['hidden'] ?? [];
         }
 
-        $requestFile = base_path(config('eypiay.EYPIAY_PATH') . '/build/request.php');
+        $requestFile = base_path(config('eypiay.path') . '/build/request.php');
+
         if (File::exists($requestFile)) {
             $requestConfig = include $requestFile;
             $this->requestValidation = $requestConfig[$route]['validations'] ?? [];
             $this->requestCasts = $requestConfig[$route]['casts'] ?? [];
         }
 
+        if (!$this->dbTable || !Schema::hasTable($this->dbTable)) {
+            return abort(404);
+        }
+
+        $this->query = DB::table($this->dbTable);
         $this->code = 404;
         $this->success = false;
         $this->response = (object) array();
@@ -118,7 +126,7 @@ class EypiayBaseController extends Controller
         $response->success = filter_var($this->success, FILTER_VALIDATE_BOOLEAN);
         $response->status = self::STATUS_TEXT[$this->code] ?? null;
 
-        if (!filter_var(config('eypiay.EYPIAY_DEBUG'), FILTER_VALIDATE_BOOLEAN)) {
+        if (!filter_var(config('eypiay.debug'), FILTER_VALIDATE_BOOLEAN)) {
             unset($response->params);
         }
 

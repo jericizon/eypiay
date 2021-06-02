@@ -30,7 +30,7 @@ class EypiayInstall extends Command
     public function __construct()
     {
         parent::__construct();
-        $this->eypiayPath = base_path(config('eypiay.EYPIAY_PATH'));
+        $this->eypiayPath = base_path(config('eypiay.path'));
     }
 
     private function _initDirectory()

@@ -14,6 +14,15 @@ class EypiayBuild extends Command
 
     const OPTIONS = ['get', 'post', 'put', 'patch', 'delete', 'options'];
 
+    const DEFAULT_CONTROLLERS = [
+        'get' => 'EypiayGetController::class',
+        'post' => 'EypiayPostController::class',
+        'put' => 'EypiayPutController::class',
+        'patch' => 'EypiayPutController::class',
+        'delete' => 'EypiayDeleteController::class',
+        'options' => 'EypiayGetController::class',
+    ];
+
     /**
      * The name and signature of the console command.
      *
@@ -36,7 +45,7 @@ class EypiayBuild extends Command
     public function __construct()
     {
         parent::__construct();
-        $this->eypiayPath = base_path(config('eypiay.EYPIAY_PATH'));
+        $this->eypiayPath = base_path(config('eypiay.path'));
         $this->buildPath = "{$this->eypiayPath}/build";
         $this->tmpPath = "{$this->eypiayPath}/tmp";
     }
@@ -83,7 +92,7 @@ class EypiayBuild extends Command
         $this->_appendRoute('<?php' . PHP_EOL);
         $this->_appendRoute('// Eypiay generated route file');
         $this->_appendRoute('use Illuminate\Support\Facades\Route;');
-        $this->_appendRoute('use Eypiay\Eypiay\Controllers\EypiayController;' . PHP_EOL);
+        $this->_appendRoute("use Eypiay\Eypiay\Controllers as EypiayControllers;" . PHP_EOL);
 
         // db.php
         $this->_appendDbConfig('<?php' . PHP_EOL);
@@ -183,7 +192,8 @@ class EypiayBuild extends Command
 
             if (is_numeric($methodKey)) {
                 $method = strtolower($methodValue);
-                $controller = "[EypiayController::class, '{$method}']";
+
+                $controller = "[EypiayControllers\\" . self::DEFAULT_CONTROLLERS[$method] . ", '{$method}']";
             } else {
                 $method = strtolower($methodKey);
                 $controller = "'{$methodValue}'";
