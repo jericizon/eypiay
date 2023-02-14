@@ -1,5 +1,5 @@
 {
-    "name": "eypiay/eypiay",
+    "name": "jericizon/eypiay",
     "description": "Rapid and simple api with laravel",
     "keywords": [
         "eypiay",
@@ -16,8 +16,7 @@
         }
     ],
     "require": {
-        "php": "^7.4|^8.0",
-        "illuminate/support": "^8.0"
+        "php": "^8.0"
     },
     "require-dev": {
         "orchestra/testbench": "^6.0",
@@ -25,12 +24,12 @@
     },
     "autoload": {
         "psr-4": {
-            "Eypiay\\Eypiay\\": "src"
+            "JericIzon\\Eypiay\\": "src"
         }
     },
     "autoload-dev": {
         "psr-4": {
-            "Eypiay\\Eypiay\\Tests\\": "tests"
+            "JericIzon\\Eypiay\\Tests\\": "tests"
         }
     },
     "scripts": {
@@ -44,10 +43,10 @@
     "extra": {
         "laravel": {
             "providers": [
-                "Eypiay\\Eypiay\\EypiayServiceProvider"
+                "JericIzon\\Eypiay\\EypiayServiceProvider"
             ],
             "aliases": {
-                "Eypiay": "Eypiay\\Eypiay\\EypiayFacade"
+                "Eypiay": "JericIzon\\Eypiay\\EypiayFacade"
             }
         }
     }

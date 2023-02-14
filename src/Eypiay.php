@@ -1,6 +1,6 @@
 <?php
 
-namespace Eypiay\Eypiay;
+namespace JericIzon\Eypiay;
 
 class Eypiay
 {

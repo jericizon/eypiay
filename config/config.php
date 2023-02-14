@@ -1,8 +1,11 @@
 <?php
 
-/*
- * You can place your custom package configuration in here.
- */
 return [
+    'endpoint-prefix' => 'eypiay',
 
+    'tables' => [
+        'users' => [
+            'model' => App\Models\User::class,
+        ]
+    ]
 ];
