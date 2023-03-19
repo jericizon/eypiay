@@ -16,26 +16,27 @@
         }
     ],
     "require": {
-        "php": "^8.0"
+        "php": "^8.0",
+        "doctrine/dbal": "^3.6"
     },
     "require-dev": {
-        "orchestra/testbench": "^6.0",
+        "orchestra/testbench": "7.0",
         "phpunit/phpunit": "^9.0"
     },
     "autoload": {
         "psr-4": {
-            "JericIzon\\Eypiay\\": "src"
+            "JericIzon\\Eypiay\\": "src",
+            "Doctrine\\DBAL\\": "vendor/doctrine/dbal/lib/Doctrine/DBAL/"
         }
     },
     "autoload-dev": {
         "psr-4": {
-            "JericIzon\\Eypiay\\Tests\\": "tests"
+            "JericIzon\\Eypiay\\Tests\\": "tests/"
         }
     },
     "scripts": {
         "test": "vendor/bin/phpunit",
         "test-coverage": "vendor/bin/phpunit --coverage-html coverage"
-
     },
     "config": {
         "sort-packages": true

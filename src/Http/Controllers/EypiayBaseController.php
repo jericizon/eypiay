@@ -3,11 +3,15 @@
 namespace JericIzon\Eypiay\Http\Controllers;
 
 use Illuminate\Http\Request;
+use DB;
+
 use JericIzon\Eypiay\Traits\EypiayControllerTrait;
+use Symfony\Component\HttpFoundation\Response;
+use JericIzon\Eypiay\Traits\ResponseApi;
 
 class EypiayBaseController extends Controller
 {
-    use EypiayControllerTrait;
+    use EypiayControllerTrait, ResponseApi;
 
     /**
      * Display a listing of the resource.
@@ -17,35 +21,18 @@ class EypiayBaseController extends Controller
      */
     public function index(Request $request, $tableName)
     {
-        $jsonResponse = [
-            'success' => false,
-        ];
-
         if(!$this->tableAvailable($tableName)) {
-            $jsonResponse['message'] = 'Page not found.';
-            return response()->json($jsonResponse, 404);
+            return $this->responseError(new \Exception('Page not found.'), Response::HTTP_NOT_FOUND);
         }
 
         try {
-
             $query = $this->getModel($tableName)->query();
-
             if($request->has('orderBy') && $request->has('sortedBy')) {
                 $query->orderBy($request->query('orderBy'), $request->query('sortedBy', 'asc'));
             }
-
             return $query->paginate();
-
         } catch (\Exception $error) {
-            \Log::error($error);
-            $jsonResponse = [
-                'success' => false,
-                'message' => 'Something went wrong.',
-            ];
-            if(config('app.debug') && !str_contains(config('app.env'), 'prod')) {
-                $jsonResponse['error'] = $error->getMessage();
-            }
-            return response()->json($jsonResponse, 500);
+            return $this->responseError($error, Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -56,7 +43,7 @@ class EypiayBaseController extends Controller
      */
     public function create()
     {
-        //
+        // TODO: auto generate form fields?
     }
 
     /**
@@ -65,9 +52,26 @@ class EypiayBaseController extends Controller
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\Response
      */
-    public function store(Request $request)
+    public function store(Request $request, $tableName)
     {
-        //
+        if(!$this->tableAvailable($tableName)) {
+            return $this->responseError(new \Exception('Page not found.'), Response::HTTP_NOT_FOUND);
+        }
+
+        DB::beginTransaction();
+        try {
+            $model = $this->getModel($tableName);
+            $dataInput = $this->castInputs($tableName, $request->all());
+            $modelId = $model->create($dataInput)->id;
+            $data = $model->find($modelId);
+
+            DB::commit();
+            return $this->responseSuccess('Data created', $data, Response::HTTP_CREATED);
+
+        } catch (\Exception $error) {
+            DB::rollback();
+            return $this->responseError($error);
+        }
     }
 
     /**
