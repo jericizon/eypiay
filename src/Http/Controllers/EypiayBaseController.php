@@ -80,9 +80,23 @@ class EypiayBaseController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function show($id)
+    public function show(Request $request, $tableName, $id)
     {
-        //
+        if(!$this->tableAvailable($tableName)) {
+            return $this->responseError(new \Exception('Page not found.'), Response::HTTP_NOT_FOUND);
+        }
+
+        try {
+            $query = $this->getModel($tableName)->query();
+            $data = $query->find($id);
+            if(!$data) {
+                return $this->responseError(new \Exception('Data not found.'), Response::HTTP_NOT_FOUND);
+            }
+            return $this->responseSuccess('Data found.', $data);
+        } catch (\Exception $error) {
+            return $this->responseError($error, Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+
     }
 
     /**
