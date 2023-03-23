@@ -50,7 +50,7 @@ class EypiayServiceProvider extends ServiceProvider
     public function register()
     {
         // Automatically apply the package configuration
-        $this->mergeConfigFrom(__DIR__.'/../config/config.php', 'eypiay');
+        $this->mergeConfigFrom(__DIR__.'/../config/eypiay.php', 'eypiay');
 
         // Register the main class to use with the facade
         $this->app->singleton('eypiay', function () {
