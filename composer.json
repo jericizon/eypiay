@@ -3,9 +3,11 @@
     "description": "Rapid and simple api with laravel",
     "keywords": [
         "eypiay",
-        "eypiay"
+        "laravel",
+        "laravel-api",
+        "automation"
     ],
-    "homepage": "https://github.com/eypiay/eypiay",
+    "homepage": "https://github.com/jericizon/eypiay",
     "license": "MIT",
     "type": "library",
     "authors": [
