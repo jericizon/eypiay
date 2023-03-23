@@ -1,6 +1,6 @@
 <?php
 
-namespace Eypiay\Eypiay;
+namespace JericIzon\Eypiay;
 
 use Illuminate\Support\ServiceProvider;
 
@@ -17,7 +17,7 @@ class EypiayServiceProvider extends ServiceProvider
         // $this->loadTranslationsFrom(__DIR__.'/../resources/lang', 'eypiay');
         // $this->loadViewsFrom(__DIR__.'/../resources/views', 'eypiay');
         // $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
-        // $this->loadRoutesFrom(__DIR__.'/routes.php');
+        $this->loadRoutesFrom(__DIR__.'/routes/eypiay.php');
 
         if ($this->app->runningInConsole()) {
             $this->publishes([
