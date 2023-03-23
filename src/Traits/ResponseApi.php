@@ -21,6 +21,16 @@ trait ResponseApi
         return response()->json($jsonResponse, $statusCode);
     }
 
+    public function responseValidationError($error, $statusCode)
+    {
+        $jsonResponse = [
+            'code' => $statusCode,
+            'success' => false,
+            'message' => $error,
+        ];
+        return response()->json($jsonResponse, $statusCode);
+    }
+
     public function responseError(\Exception $error, $statusCode = 500)
     {
         \Log::error($error);

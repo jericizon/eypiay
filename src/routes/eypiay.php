@@ -11,5 +11,5 @@ Route::post($endpointPrefix. '/{tableName}', [EypiayBaseController::class, 'stor
 Route::get($endpointPrefix. '/{tableName}/{id}', [EypiayBaseController::class, 'show']);
 // Route::get($endpointPrefix. '/{tableName}/{id}/edit', [EypiayBaseController::class, 'edit']);
 
-Route::match(['put', 'patch'], '/{tableName}/{id}', [EypiayBaseController::class, 'update']);
+Route::match(['put', 'patch'], $endpointPrefix. '/{tableName}/{id}', [EypiayBaseController::class, 'update']);
 Route::delete($endpointPrefix. '/{tableName}/{id}', [EypiayBaseController::class, 'destroy']);

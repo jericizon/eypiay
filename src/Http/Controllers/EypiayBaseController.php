@@ -5,8 +5,10 @@ namespace JericIzon\Eypiay\Http\Controllers;
 use Illuminate\Http\Request;
 use DB;
 
-use JericIzon\Eypiay\Traits\EypiayControllerTrait;
 use Symfony\Component\HttpFoundation\Response;
+use Illuminate\Support\Facades\Validator;
+
+use JericIzon\Eypiay\Traits\EypiayControllerTrait;
 use JericIzon\Eypiay\Traits\ResponseApi;
 
 class EypiayBaseController extends Controller
@@ -30,7 +32,8 @@ class EypiayBaseController extends Controller
             if($request->has('orderBy') && $request->has('sortedBy')) {
                 $query->orderBy($request->query('orderBy'), $request->query('sortedBy', 'asc'));
             }
-            return $query->paginate();
+            $resource = $this->getResource($tableName);
+            return $resource::collection($query->paginate());
         } catch (\Exception $error) {
             return $this->responseError($error, Response::HTTP_INTERNAL_SERVER_ERROR);
         }
@@ -58,9 +61,20 @@ class EypiayBaseController extends Controller
             return $this->responseError(new \Exception('Page not found.'), Response::HTTP_NOT_FOUND);
         }
 
+        $model = $this->getModel($tableName);
+        $validations = $this->getValidations($tableName);
+
+        if(count($validations)) {
+            $validator = Validator::make($request->all(), $validations);
+
+            if($validator->fails()) {
+                // dd($validator->messages());
+                return $this->responseValidationError($validator->messages(), Response::HTTP_UNPROCESSABLE_ENTITY);
+            }
+        }
+
         DB::beginTransaction();
         try {
-            $model = $this->getModel($tableName);
             $dataInput = $this->castInputs($tableName, $request->all());
             $modelId = $model->create($dataInput)->id;
             $data = $model->find($modelId);
@@ -87,12 +101,15 @@ class EypiayBaseController extends Controller
         }
 
         try {
-            $query = $this->getModel($tableName)->query();
-            $data = $query->find($id);
+            $model = $this->getModel($tableName);
+            $primaryKey = $model->getKeyName();
+            $data = $model->where($primaryKey, $id)->first();
             if(!$data) {
                 return $this->responseError(new \Exception('Data not found.'), Response::HTTP_NOT_FOUND);
             }
-            return $this->responseSuccess('Data found.', $data);
+
+            $resource = $this->getResource($tableName);
+            return new $resource($data);
         } catch (\Exception $error) {
             return $this->responseError($error, Response::HTTP_INTERNAL_SERVER_ERROR);
         }
@@ -107,7 +124,7 @@ class EypiayBaseController extends Controller
      */
     public function edit($id)
     {
-        //
+        // TODO: auto generate form fields?
     }
 
     /**
@@ -117,9 +134,38 @@ class EypiayBaseController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function update(Request $request, $id)
+    public function update(Request $request, $tableName, $id)
     {
-        //
+        if(!$this->tableAvailable($tableName)) {
+            return $this->responseError(new \Exception('Page not found.'), Response::HTTP_NOT_FOUND);
+        }
+
+        DB::beginTransaction();
+        try {
+            $model = $this->getModel($tableName);
+            $primaryKey = $model->getKeyName();
+
+            $dataInput = $this->castInputs($tableName, $request->all());
+
+            $updated = $model
+                ->where($primaryKey, $id)
+                ->update($dataInput);
+
+            if(!$updated) {
+                return $this->responseError(new \Exception('Updating failed.'), Response::HTTP_UNPROCESSABLE_ENTITY);
+            }
+
+            $data = $model->where($primaryKey, $id)->first();
+            $resource = $this->getResource($tableName);
+            $result =  new $resource($data);
+            DB::commit();
+
+            return $this->responseSuccess('Data updated', $result, Response::HTTP_ACCEPTED);
+
+        } catch (\Exception $error) {
+            DB::rollback();
+            return $this->responseError($error);
+        }
     }
 
     /**
@@ -128,8 +174,27 @@ class EypiayBaseController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function destroy($id)
+    public function destroy(Request $request, $tableName, $id)
     {
-        //
+        if(!$this->tableAvailable($tableName)) {
+            return $this->responseError(new \Exception('Page not found.'), Response::HTTP_NOT_FOUND);
+        }
+
+        DB::beginTransaction();
+
+        try {
+            $model = $this->getModel($tableName);
+            $primaryKey = $model->getKeyName();
+
+            $delete = $model
+                    ->where($primaryKey, $id)
+                    ->delete();
+
+            DB::commit();
+            return $this->responseSuccess('Record deleted', [], Response::HTTP_ACCEPTED);
+        } catch (\Exception $error) {
+            DB::rollback();
+            return $this->responseError($error);
+        }
     }
 }
